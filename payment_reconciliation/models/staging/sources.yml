@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: raw
+    database: payment-recon-mart
+    schema: raw
+
+    tables:
+      - name: merchants
+      - name: orders
+      - name: payments
+      - name: settlements

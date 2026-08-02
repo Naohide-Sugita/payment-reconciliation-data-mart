@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: fct_payment_reconciliation
+    columns:
+      - name: order_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: reconciliation_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - MATCHED
+                  - NO_SUCCESSFUL_PAYMENT
+                  - ORDER_PAYMENT_AMOUNT_MISMATCH
+                  - MISSING_SETTLEMENT
+                  - SETTLEMENT_AMOUNT_MISMATCH

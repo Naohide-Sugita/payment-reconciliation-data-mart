@@ -216,3 +216,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local environments
+.venv*/
+
+# dbt generated files
+logs/
+dbt_packages/
+
+# Local credentials
+profiles.yml
+service-account*.json
+gcp-key*.json

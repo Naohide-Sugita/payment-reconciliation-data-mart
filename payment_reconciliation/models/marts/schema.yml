@@ -16,3 +16,55 @@ models:
                 values:
                   - MATCHED
                   - ERROR
+
+      - name: is_payment_missing
+        data_tests:
+          - not_null
+
+      - name: is_merchant_missing
+        data_tests:
+          - not_null
+
+      - name: is_fee_rate_missing
+        data_tests:
+          - not_null
+
+      - name: is_order_payment_amount_mismatch
+        data_tests:
+          - not_null
+
+      - name: is_settlement_missing
+        data_tests:
+          - not_null
+
+      - name: is_settlement_not_completed
+        data_tests:
+          - not_null
+
+      - name: is_merchant_mismatch
+        data_tests:
+          - not_null
+
+      - name: is_gross_amount_mismatch
+        data_tests:
+          - not_null
+
+      - name: is_fee_amount_mismatch
+        data_tests:
+          - not_null
+
+      - name: is_net_amount_mismatch
+        data_tests:
+          - not_null
+
+      - name: is_payment_datetime_invalid
+        data_tests:
+          - not_null
+
+      - name: is_settlement_datetime_invalid
+        data_tests:
+          - not_null
+
+      - name: error_count
+        data_tests:
+          - not_null

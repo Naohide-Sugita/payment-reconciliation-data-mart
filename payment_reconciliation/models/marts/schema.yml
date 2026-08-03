@@ -15,7 +15,4 @@ models:
               arguments:
                 values:
                   - MATCHED
-                  - NO_SUCCESSFUL_PAYMENT
-                  - ORDER_PAYMENT_AMOUNT_MISMATCH
-                  - MISSING_SETTLEMENT
-                  - SETTLEMENT_AMOUNT_MISMATCH
+                  - ERROR

@@ -3,38 +3,38 @@ version: 2
 models:
   - name: stg_merchants
     description: >-
-      Cleans the merchant master input by trimming identifiers and names and
-      converting the fee rate to NUMERIC. Grain: one row per merchant_id.
+      加盟店マスタのIDと名称から前後の空白を除去し、手数料率をNUMERIC型へ変換する。
+      粒度は加盟店IDごとに1行。
     columns:
       - name: merchant_id
         data_type: string
-        description: "Primary key. Trimmed merchant identifier; required and unique."
+        description: "主キー。前後の空白を除去した加盟店ID。NULL不可かつ一意。"
         data_tests:
           - not_null
           - unique
       - name: merchant_name
         data_type: string
-        description: "Trimmed merchant display name."
+        description: "前後の空白を除去した加盟店の表示名。"
       - name: fee_rate
         data_type: numeric
-        description: "Contracted fee rate converted with SAFE_CAST; required for fee calculation."
+        description: "SAFE_CASTでNUMERIC型へ変換した契約手数料率。手数料計算に使用するためNULL不可。"
         data_tests:
           - not_null
 
   - name: stg_orders
     description: >-
-      Cleans order input and converts amount and timestamp fields to BigQuery
-      types. Grain: one row per order_id.
+      注文データを整形し、金額と日時をBigQueryのデータ型へ変換する。
+      粒度は注文IDごとに1行。
     columns:
       - name: order_id
         data_type: string
-        description: "Primary key. Trimmed order identifier; required and unique."
+        description: "主キー。前後の空白を除去した注文ID。NULL不可かつ一意。"
         data_tests:
           - not_null
           - unique
       - name: merchant_id
         data_type: string
-        description: "Trimmed merchant identifier; must reference stg_merchants."
+        description: "前後の空白を除去した加盟店ID。stg_merchantsの加盟店IDを参照し、NULL不可。"
         data_tests:
           - not_null
           - relationships:
@@ -43,27 +43,27 @@ models:
                 field: merchant_id
       - name: order_amount
         data_type: int64
-        description: "Order amount in whole currency units, converted with SAFE_CAST."
+        description: "SAFE_CASTでINT64型へ変換した注文金額。NULL不可。"
         data_tests:
           - not_null
       - name: ordered_at
         data_type: timestamp
-        description: "Order timestamp converted with SAFE_CAST."
+        description: "SAFE_CASTでTIMESTAMP型へ変換した注文日時。"
 
   - name: stg_payments
     description: >-
-      Cleans payment input, normalizes status values, and converts amount and
-      timestamp fields. Grain: one row per payment_id.
+      決済データを整形し、決済状態を大文字へ統一して、金額と日時をBigQueryのデータ型へ変換する。
+      粒度は決済IDごとに1行。
     columns:
       - name: payment_id
         data_type: string
-        description: "Primary key. Trimmed payment identifier; required and unique."
+        description: "主キー。前後の空白を除去した決済ID。NULL不可かつ一意。"
         data_tests:
           - not_null
           - unique
       - name: order_id
         data_type: string
-        description: "Trimmed order identifier; must reference stg_orders."
+        description: "前後の空白を除去した注文ID。stg_ordersの注文IDを参照し、NULL不可。"
         data_tests:
           - not_null
           - relationships:
@@ -72,53 +72,53 @@ models:
                 field: order_id
       - name: payment_amount
         data_type: int64
-        description: "Payment amount in whole currency units, converted with SAFE_CAST."
+        description: "SAFE_CASTでINT64型へ変換した決済金額。"
       - name: payment_status
         data_type: string
-        description: "Uppercase payment status; limited to SUCCESS or FAILED."
+        description: "大文字へ統一した決済状態。許容値はSUCCESSまたはFAILED。"
         data_tests:
           - accepted_values:
               arguments:
                 values: ['SUCCESS', 'FAILED']
       - name: settlement_batch_id
         data_type: string
-        description: "Trimmed settlement batch identifier; blank strings are converted to NULL."
+        description: "前後の空白を除去した精算バッチID。空文字はNULLへ変換する。"
       - name: paid_at
         data_type: timestamp
-        description: "Payment timestamp converted with SAFE_CAST."
+        description: "SAFE_CASTでTIMESTAMP型へ変換した決済日時。"
 
   - name: stg_settlements
     description: >-
-      Cleans settlement input, normalizes status values, and converts amount
-      and timestamp fields. Grain: one row per settlement_id and settlement_batch_id.
+      精算データを整形し、精算状態を大文字へ統一して、金額と日時をBigQueryのデータ型へ変換する。
+      粒度は精算IDかつ精算バッチIDごとに1行。
     columns:
       - name: settlement_id
         data_type: string
-        description: "Settlement identifier; required and unique."
+        description: "精算ID。NULL不可かつ一意。"
         data_tests:
           - not_null
           - unique
       - name: settlement_batch_id
         data_type: string
-        description: "Settlement batch identifier used to join successful payments; required and unique."
+        description: "成功決済との結合に使用する精算バッチID。NULL不可かつ一意。"
         data_tests:
           - not_null
           - unique
       - name: merchant_id
         data_type: string
-        description: "Trimmed merchant identifier recorded on the settlement."
+        description: "前後の空白を除去した、精算に記録された加盟店ID。"
       - name: gross_amount
         data_type: int64
-        description: "Gross settlement amount converted with SAFE_CAST."
+        description: "SAFE_CASTでINT64型へ変換した精算総額。"
       - name: fee_amount
         data_type: int64
-        description: "Actual fee amount converted with SAFE_CAST."
+        description: "SAFE_CASTでINT64型へ変換した実手数料額。"
       - name: net_amount
         data_type: int64
-        description: "Actual net amount converted with SAFE_CAST."
+        description: "SAFE_CASTでINT64型へ変換した実入金額。"
       - name: settlement_status
         data_type: string
-        description: "Uppercase settlement processing status."
+        description: "大文字へ統一した精算処理の状態。"
       - name: settled_at
         data_type: timestamp
-        description: "Settlement timestamp converted with SAFE_CAST."
+        description: "SAFE_CASTでTIMESTAMP型へ変換した精算日時。"

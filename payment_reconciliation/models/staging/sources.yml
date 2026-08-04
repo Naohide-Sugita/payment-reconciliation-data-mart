@@ -3,67 +3,66 @@ version: 2
 sources:
   - name: raw
     description: >-
-      Fixed sample data loaded by dbt seed. These tables preserve the input
-      structure used by the reconciliation test cases; cleansing and type
-      normalization are performed in the staging models.
+      dbt seedで投入する固定サンプルデータ。
+      照合テストケースの入力構造を保持し、文字列整形と型変換はstagingモデルで行う。
     database: payment-recon-mart
     schema: raw
 
     tables:
       - name: merchants
-        description: "Merchant master input. Grain: one row per merchant_id."
+        description: "加盟店マスタの入力データ。粒度は加盟店IDごとに1行。"
         columns:
           - name: merchant_id
-            description: "Merchant identifier."
+            description: "加盟店を識別するID。"
           - name: merchant_name
-            description: "Merchant display name."
+            description: "加盟店の表示名。"
           - name: fee_rate
-            description: "Contracted fee rate supplied as a decimal value."
+            description: "契約上の手数料率。小数で入力する。"
 
       - name: orders
-        description: "Order input. Grain: one row per order_id."
+        description: "注文の入力データ。粒度は注文IDごとに1行。"
         columns:
           - name: order_id
-            description: "Order identifier."
+            description: "注文を識別するID。"
           - name: merchant_id
-            description: "Merchant identifier recorded on the order."
+            description: "注文に記録された加盟店ID。"
           - name: order_amount
-            description: "Order amount in whole currency units."
+            description: "注文金額。通貨の最小単位未満を含まない整数値。"
           - name: ordered_at
-            description: "Timestamp when the order was placed."
+            description: "注文が行われた日時。"
 
       - name: payments
-        description: "Payment input. Grain: one row per payment_id."
+        description: "決済の入力データ。粒度は決済IDごとに1行。"
         columns:
           - name: payment_id
-            description: "Payment identifier."
+            description: "決済を識別するID。"
           - name: order_id
-            description: "Order identifier associated with the payment."
+            description: "決済に対応する注文ID。"
           - name: payment_amount
-            description: "Captured payment amount in whole currency units."
+            description: "決済金額。通貨の最小単位未満を含まない整数値。"
           - name: payment_status
-            description: "Payment result supplied by the payment process."
+            description: "決済処理から受け取った決済結果。"
           - name: settlement_batch_id
-            description: "Batch identifier used to link a successful payment to settlement data."
+            description: "成功決済と精算データを紐づける精算バッチID。"
           - name: paid_at
-            description: "Timestamp when the payment was processed."
+            description: "決済が処理された日時。"
 
       - name: settlements
-        description: "Settlement input. Grain: one row per settlement_id and settlement_batch_id."
+        description: "精算の入力データ。粒度は精算IDかつ精算バッチIDごとに1行。"
         columns:
           - name: settlement_id
-            description: "Settlement identifier."
+            description: "精算を識別するID。"
           - name: settlement_batch_id
-            description: "Settlement batch identifier used to link payments and settlements."
+            description: "決済と精算を紐づける精算バッチID。"
           - name: merchant_id
-            description: "Merchant identifier recorded on the settlement."
+            description: "精算に記録された加盟店ID。"
           - name: gross_amount
-            description: "Gross settlement amount before fees."
+            description: "手数料控除前の精算総額。"
           - name: fee_amount
-            description: "Fee amount deducted from the gross amount."
+            description: "精算総額から控除された手数料額。"
           - name: net_amount
-            description: "Net settlement amount after fees."
+            description: "手数料控除後の入金額。"
           - name: settlement_status
-            description: "Settlement processing status."
+            description: "精算処理の状態。"
           - name: settled_at
-            description: "Timestamp when the settlement was processed."
+            description: "精算が処理された日時。"

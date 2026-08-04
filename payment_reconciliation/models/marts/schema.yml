@@ -3,126 +3,125 @@ version: 2
 models:
   - name: fct_payment_reconciliation
     description: >-
-      Reconciles each order with its successful payment, merchant master, and
-      settlement record. The model calculates expected fees and net amounts,
-      evaluates twelve anomaly flags, and assigns MATCHED or ERROR.
-      Grain: one row per order_id.
+      注文ごとに成功決済、加盟店マスタ、精算データを照合する。
+      期待手数料と期待入金額を算出し、12種類の異常フラグを評価して、
+      総合状態をMATCHEDまたはERRORとして出力する。粒度は注文IDごとに1行。
     columns:
       - name: order_id
         data_type: string
-        description: "Primary key. Order identifier from stg_orders."
+        description: "主キー。stg_ordersから取得した注文ID。"
         data_tests:
           - not_null
           - unique
       - name: merchant_id
         data_type: string
-        description: "Merchant identifier recorded on the order."
+        description: "注文に記録された加盟店ID。"
       - name: merchant_name
         data_type: string
-        description: "Merchant display name from the merchant master; NULL when the master record is missing."
+        description: "加盟店マスタの表示名。該当するマスタがない場合はNULL。"
       - name: order_amount
         data_type: int64
-        description: "Order amount in whole currency units."
+        description: "注文金額。通貨の最小単位未満を含まない整数値。"
       - name: ordered_at
         data_type: timestamp
-        description: "Timestamp when the order was placed."
+        description: "注文が行われた日時。"
       - name: payment_id
         data_type: string
-        description: "Successful payment identifier; NULL when no successful payment exists."
+        description: "成功決済のID。成功決済がない場合はNULL。"
       - name: payment_amount
         data_type: int64
-        description: "Successful payment amount; NULL when no successful payment exists."
+        description: "成功決済の金額。成功決済がない場合はNULL。"
       - name: settlement_batch_id
         data_type: string
-        description: "Settlement batch identifier from the successful payment."
+        description: "成功決済に記録された精算バッチID。"
       - name: paid_at
         data_type: timestamp
-        description: "Timestamp when the successful payment was processed."
+        description: "成功決済が処理された日時。"
       - name: settlement_id
         data_type: string
-        description: "Settlement identifier; NULL when the linked settlement is missing."
+        description: "精算ID。紐づく精算がない場合はNULL。"
       - name: settlement_merchant_id
         data_type: string
-        description: "Merchant identifier recorded on the settlement."
+        description: "精算に記録された加盟店ID。"
       - name: gross_amount
         data_type: int64
-        description: "Gross amount recorded on the settlement."
+        description: "精算に記録された手数料控除前の総額。"
       - name: actual_fee_amount
         data_type: int64
-        description: "Fee amount recorded on the settlement."
+        description: "精算に記録された実手数料額。"
       - name: actual_net_amount
         data_type: int64
-        description: "Net amount recorded on the settlement."
+        description: "精算に記録された実入金額。"
       - name: settlement_status
         data_type: string
-        description: "Settlement processing status."
+        description: "精算処理の状態。"
       - name: settled_at
         data_type: timestamp
-        description: "Timestamp when the settlement was processed."
+        description: "精算が処理された日時。"
       - name: fee_rate
         data_type: numeric
-        description: "Contracted merchant fee rate from the merchant master."
+        description: "加盟店マスタから取得した契約手数料率。"
       - name: expected_fee_amount
         data_type: int64
-        description: "Expected fee: ROUND(payment_amount * fee_rate), cast to INT64."
+        description: "期待手数料額。payment_amount × fee_rateを四捨五入し、INT64型へ変換する。"
       - name: expected_net_amount
         data_type: int64
-        description: "Expected net amount: payment_amount minus expected_fee_amount."
+        description: "期待入金額。payment_amountからexpected_fee_amountを差し引いて算出する。"
       - name: is_payment_missing
         data_type: boolean
-        description: "TRUE when no successful payment is linked to the order."
+        description: "注文に紐づく成功決済がない場合にTRUE。"
         data_tests: [not_null]
       - name: is_merchant_missing
         data_type: boolean
-        description: "TRUE when the order's merchant is absent from the merchant master."
+        description: "注文の加盟店IDが加盟店マスタに存在しない場合にTRUE。"
         data_tests: [not_null]
       - name: is_fee_rate_missing
         data_type: boolean
-        description: "TRUE when the merchant exists but its fee rate is NULL."
+        description: "加盟店マスタは存在するが、手数料率がNULLの場合にTRUE。"
         data_tests: [not_null]
       - name: is_order_payment_amount_mismatch
         data_type: boolean
-        description: "TRUE when order_amount differs from payment_amount."
+        description: "注文金額と決済金額が一致しない場合にTRUE。"
         data_tests: [not_null]
       - name: is_settlement_missing
         data_type: boolean
-        description: "TRUE when a successful payment exists but no settlement is linked."
+        description: "成功決済はあるが、紐づく精算がない場合にTRUE。"
         data_tests: [not_null]
       - name: is_settlement_not_completed
         data_type: boolean
-        description: "TRUE when the linked settlement status is not COMPLETED."
+        description: "紐づく精算の状態がCOMPLETEDでない場合にTRUE。"
         data_tests: [not_null]
       - name: is_merchant_mismatch
         data_type: boolean
-        description: "TRUE when the order merchant differs from the settlement merchant."
+        description: "注文の加盟店IDと精算の加盟店IDが一致しない場合にTRUE。"
         data_tests: [not_null]
       - name: is_gross_amount_mismatch
         data_type: boolean
-        description: "TRUE when settlement gross_amount differs from payment_amount."
+        description: "精算総額と決済金額が一致しない場合にTRUE。"
         data_tests: [not_null]
       - name: is_fee_amount_mismatch
         data_type: boolean
-        description: "TRUE when actual_fee_amount differs from expected_fee_amount."
+        description: "実手数料額と期待手数料額が一致しない場合にTRUE。"
         data_tests: [not_null]
       - name: is_net_amount_mismatch
         data_type: boolean
-        description: "TRUE when actual_net_amount differs from expected_net_amount."
+        description: "実入金額と期待入金額が一致しない場合にTRUE。"
         data_tests: [not_null]
       - name: is_payment_datetime_invalid
         data_type: boolean
-        description: "TRUE when an applicable order/payment timestamp is NULL or paid_at precedes ordered_at."
+        description: "判定に必要な注文・決済日時がNULL、または決済日時が注文日時より前の場合にTRUE。"
         data_tests: [not_null]
       - name: is_settlement_datetime_invalid
         data_type: boolean
-        description: "TRUE when an applicable payment/settlement timestamp is NULL or settled_at precedes paid_at."
+        description: "判定に必要な決済・精算日時がNULL、または精算日時が決済日時より前の場合にTRUE。"
         data_tests: [not_null]
       - name: error_count
         data_type: int64
-        description: "Count of TRUE anomaly flags across the twelve reconciliation checks."
+        description: "12種類の照合異常フラグのうち、TRUEとなった件数。"
         data_tests: [not_null]
       - name: reconciliation_status
         data_type: string
-        description: "ERROR when error_count is greater than zero; otherwise MATCHED."
+        description: "error_countが1以上ならERROR、それ以外はMATCHED。"
         data_tests:
           - not_null
           - accepted_values:

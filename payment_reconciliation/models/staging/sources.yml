@@ -2,11 +2,68 @@ version: 2
 
 sources:
   - name: raw
+    description: >-
+      Fixed sample data loaded by dbt seed. These tables preserve the input
+      structure used by the reconciliation test cases; cleansing and type
+      normalization are performed in the staging models.
     database: payment-recon-mart
     schema: raw
 
     tables:
       - name: merchants
+        description: "Merchant master input. Grain: one row per merchant_id."
+        columns:
+          - name: merchant_id
+            description: "Merchant identifier."
+          - name: merchant_name
+            description: "Merchant display name."
+          - name: fee_rate
+            description: "Contracted fee rate supplied as a decimal value."
+
       - name: orders
+        description: "Order input. Grain: one row per order_id."
+        columns:
+          - name: order_id
+            description: "Order identifier."
+          - name: merchant_id
+            description: "Merchant identifier recorded on the order."
+          - name: order_amount
+            description: "Order amount in whole currency units."
+          - name: ordered_at
+            description: "Timestamp when the order was placed."
+
       - name: payments
+        description: "Payment input. Grain: one row per payment_id."
+        columns:
+          - name: payment_id
+            description: "Payment identifier."
+          - name: order_id
+            description: "Order identifier associated with the payment."
+          - name: payment_amount
+            description: "Captured payment amount in whole currency units."
+          - name: payment_status
+            description: "Payment result supplied by the payment process."
+          - name: settlement_batch_id
+            description: "Batch identifier used to link a successful payment to settlement data."
+          - name: paid_at
+            description: "Timestamp when the payment was processed."
+
       - name: settlements
+        description: "Settlement input. Grain: one row per settlement_id and settlement_batch_id."
+        columns:
+          - name: settlement_id
+            description: "Settlement identifier."
+          - name: settlement_batch_id
+            description: "Settlement batch identifier used to link payments and settlements."
+          - name: merchant_id
+            description: "Merchant identifier recorded on the settlement."
+          - name: gross_amount
+            description: "Gross settlement amount before fees."
+          - name: fee_amount
+            description: "Fee amount deducted from the gross amount."
+          - name: net_amount
+            description: "Net settlement amount after fees."
+          - name: settlement_status
+            description: "Settlement processing status."
+          - name: settled_at
+            description: "Timestamp when the settlement was processed."

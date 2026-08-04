@@ -2,13 +2,127 @@ version: 2
 
 models:
   - name: fct_payment_reconciliation
+    description: >-
+      Reconciles each order with its successful payment, merchant master, and
+      settlement record. The model calculates expected fees and net amounts,
+      evaluates twelve anomaly flags, and assigns MATCHED or ERROR.
+      Grain: one row per order_id.
     columns:
       - name: order_id
+        data_type: string
+        description: "Primary key. Order identifier from stg_orders."
         data_tests:
           - not_null
           - unique
-
+      - name: merchant_id
+        data_type: string
+        description: "Merchant identifier recorded on the order."
+      - name: merchant_name
+        data_type: string
+        description: "Merchant display name from the merchant master; NULL when the master record is missing."
+      - name: order_amount
+        data_type: int64
+        description: "Order amount in whole currency units."
+      - name: ordered_at
+        data_type: timestamp
+        description: "Timestamp when the order was placed."
+      - name: payment_id
+        data_type: string
+        description: "Successful payment identifier; NULL when no successful payment exists."
+      - name: payment_amount
+        data_type: int64
+        description: "Successful payment amount; NULL when no successful payment exists."
+      - name: settlement_batch_id
+        data_type: string
+        description: "Settlement batch identifier from the successful payment."
+      - name: paid_at
+        data_type: timestamp
+        description: "Timestamp when the successful payment was processed."
+      - name: settlement_id
+        data_type: string
+        description: "Settlement identifier; NULL when the linked settlement is missing."
+      - name: settlement_merchant_id
+        data_type: string
+        description: "Merchant identifier recorded on the settlement."
+      - name: gross_amount
+        data_type: int64
+        description: "Gross amount recorded on the settlement."
+      - name: actual_fee_amount
+        data_type: int64
+        description: "Fee amount recorded on the settlement."
+      - name: actual_net_amount
+        data_type: int64
+        description: "Net amount recorded on the settlement."
+      - name: settlement_status
+        data_type: string
+        description: "Settlement processing status."
+      - name: settled_at
+        data_type: timestamp
+        description: "Timestamp when the settlement was processed."
+      - name: fee_rate
+        data_type: numeric
+        description: "Contracted merchant fee rate from the merchant master."
+      - name: expected_fee_amount
+        data_type: int64
+        description: "Expected fee: ROUND(payment_amount * fee_rate), cast to INT64."
+      - name: expected_net_amount
+        data_type: int64
+        description: "Expected net amount: payment_amount minus expected_fee_amount."
+      - name: is_payment_missing
+        data_type: boolean
+        description: "TRUE when no successful payment is linked to the order."
+        data_tests: [not_null]
+      - name: is_merchant_missing
+        data_type: boolean
+        description: "TRUE when the order's merchant is absent from the merchant master."
+        data_tests: [not_null]
+      - name: is_fee_rate_missing
+        data_type: boolean
+        description: "TRUE when the merchant exists but its fee rate is NULL."
+        data_tests: [not_null]
+      - name: is_order_payment_amount_mismatch
+        data_type: boolean
+        description: "TRUE when order_amount differs from payment_amount."
+        data_tests: [not_null]
+      - name: is_settlement_missing
+        data_type: boolean
+        description: "TRUE when a successful payment exists but no settlement is linked."
+        data_tests: [not_null]
+      - name: is_settlement_not_completed
+        data_type: boolean
+        description: "TRUE when the linked settlement status is not COMPLETED."
+        data_tests: [not_null]
+      - name: is_merchant_mismatch
+        data_type: boolean
+        description: "TRUE when the order merchant differs from the settlement merchant."
+        data_tests: [not_null]
+      - name: is_gross_amount_mismatch
+        data_type: boolean
+        description: "TRUE when settlement gross_amount differs from payment_amount."
+        data_tests: [not_null]
+      - name: is_fee_amount_mismatch
+        data_type: boolean
+        description: "TRUE when actual_fee_amount differs from expected_fee_amount."
+        data_tests: [not_null]
+      - name: is_net_amount_mismatch
+        data_type: boolean
+        description: "TRUE when actual_net_amount differs from expected_net_amount."
+        data_tests: [not_null]
+      - name: is_payment_datetime_invalid
+        data_type: boolean
+        description: "TRUE when an applicable order/payment timestamp is NULL or paid_at precedes ordered_at."
+        data_tests: [not_null]
+      - name: is_settlement_datetime_invalid
+        data_type: boolean
+        description: "TRUE when an applicable payment/settlement timestamp is NULL or settled_at precedes paid_at."
+        data_tests: [not_null]
+      - name: error_count
+        data_type: int64
+        description: "Count of TRUE anomaly flags across the twelve reconciliation checks."
+        data_tests: [not_null]
       - name: reconciliation_status
+        data_type: string
+        description: "ERROR when error_count is greater than zero; otherwise MATCHED."
         data_tests:
           - not_null
           - accepted_values:
@@ -16,55 +130,3 @@ models:
                 values:
                   - MATCHED
                   - ERROR
-
-      - name: is_payment_missing
-        data_tests:
-          - not_null
-
-      - name: is_merchant_missing
-        data_tests:
-          - not_null
-
-      - name: is_fee_rate_missing
-        data_tests:
-          - not_null
-
-      - name: is_order_payment_amount_mismatch
-        data_tests:
-          - not_null
-
-      - name: is_settlement_missing
-        data_tests:
-          - not_null
-
-      - name: is_settlement_not_completed
-        data_tests:
-          - not_null
-
-      - name: is_merchant_mismatch
-        data_tests:
-          - not_null
-
-      - name: is_gross_amount_mismatch
-        data_tests:
-          - not_null
-
-      - name: is_fee_amount_mismatch
-        data_tests:
-          - not_null
-
-      - name: is_net_amount_mismatch
-        data_tests:
-          - not_null
-
-      - name: is_payment_datetime_invalid
-        data_tests:
-          - not_null
-
-      - name: is_settlement_datetime_invalid
-        data_tests:
-          - not_null
-
-      - name: error_count
-        data_tests:
-          - not_null

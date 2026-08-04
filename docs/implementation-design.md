@@ -1,8 +1,8 @@
 # 実装設計
 
-- 版：v0.2
-- 更新日：2026-08-03
-- 対象：MVP v0.1.0
+- 版：v0.3
+- 更新日：2026-08-04
+- 対象：MVP v0.1.0／応募用仕上げ v0.2.0
 - 関連資料：[要件・受入基準](requirements-and-acceptance.md)
 
 ## 1. 目的
@@ -210,7 +210,72 @@ payment-reconciliation-data-mart/
 | 中間層を設けない | 5モデル規模では再利用性より構成の単純さを優先する |
 | 全件再構築を採用する | 固定seedの回帰テストが目的で、増分取込は対象外だから |
 
-## 13. 現在の対象外と次期開発
+## 13. CI回帰テスト設計
+
+P-05では、固定seedを回帰テストケースとして使用するGitHub Actionsの実行方針を次のとおり決定する。ワークフローとGCP認証はP-06～P-08で実装・検証するため、本書v0.3の時点では設計済み・未実装である。
+
+### 13.1 目的
+
+SQL、YAML、seedを変更した際に、注文・決済・精算の照合ロジックとデータ品質が既知の期待結果から退行していないことを自動確認する。本CIは本番バッチや日次データ処理ではなく、固定テストデータを用いた継続的な回帰テストである。
+
+### 13.2 実行契機
+
+| 契機 | 対象 | 方針 |
+|---|---|---|
+| `push` | `main`ブランチ | dbt関連ファイルの反映後に回帰テストを実行する |
+| `pull_request` | `main`ブランチ向け | 同一リポジトリ内のブランチからのPRだけ、GCP認証を伴う回帰テストを実行する |
+| `workflow_dispatch` | 手動 | 認証・設定変更後や再確認時に任意実行できるようにする |
+
+`payment_reconciliation/**`、CI依存関係ファイル、ワークフロー自身の変更を起動対象とし、ドキュメントだけの変更ではBigQueryを実行しない。外部forkからのPRにはGCP権限を渡さない。
+
+### 13.3 実行環境と制御
+
+| 項目 | 決定内容 |
+|---|---|
+| runner | GitHub-hosted Ubuntu runner |
+| Python | CI設定で固定したバージョン |
+| dbt | ローカルで動作確認済みの`dbt-bigquery`系バージョンを固定 |
+| 作業ディレクトリ | `payment_reconciliation/` |
+| BigQuery location | `asia-northeast1` |
+| 認証 | GitHub OIDCとGoogle Cloud Workload Identity Federationを使用し、サービスアカウント鍵は保存しない |
+| 権限 | 対象プロジェクトでdbt実行に必要なBigQuery権限だけを付与する |
+| 同時実行 | `concurrency`でdbt CIを1本に制限し、同一テーブルへの競合を防ぐ |
+| 秘密情報 | プロジェクトID等はGitHub Variables、認証先識別子はSecretsまたはVariablesで管理し、JSON鍵は使用しない |
+
+### 13.4 実行順序
+
+raw seedがdbtの依存グラフに接続されていないため、`dbt build`単独は使用しない。次の順序を別ステップとして固定し、いずれかが失敗した時点で後続処理を停止する。
+
+```text
+checkout
+  → Python・dbt-bigqueryの準備
+  → GitHub OIDCによるGCP認証
+  → profiles.ymlのCI設定を生成
+  → dbt debug
+  → dbt seed --full-refresh
+  → dbt run --full-refresh
+  → dbt test
+```
+
+### 13.5 成功・失敗条件
+
+| 区分 | 条件 |
+|---|---|
+| 成功 | `dbt debug`が成功し、seed 4件、model 5件、test 37件がすべて成功する |
+| 失敗 | 認証・接続・コンパイル・seed・model・testのいずれかが非ゼロ終了する |
+| 業務異常 | サンプル注文が`ERROR`と判定されても、固定ケースの期待値と一致すればCI成功とする |
+| 退行 | 正常注文の誤判定、異常の見逃し、重複、NULL、許容値違反、固定8注文の期待結果不一致はdbt test失敗とする |
+
+### 13.6 P-05完了条件
+
+- 実行契機と対象パスが決定している
+- 外部forkのPRにGCP権限を渡さない方針が決定している
+- `seed → run → test`の実行順序が決定している
+- 4 seed、5 model、37 testを成功条件としている
+- 固定データ内の業務異常とCI失敗の違いを説明できる
+- 認証方式を鍵ファイルではなくWorkload Identity Federationに決定している
+
+## 14. 現在の対象外と次期開発
 
 - GCS・APIからの継続取込
 - 日次スケジュール実行
@@ -219,9 +284,9 @@ payment-reconciliation-data-mart/
 - intermediate層
 - 本番規模の性能・可用性設計
 
-次期開発では、GitHub Actionsから固定テストデータによる`dbt seed --full-refresh`、`dbt run --full-refresh`、`dbt test`を順に実行し、SQL変更時の回帰を自動検知する。これは本番バッチ運用ではなくCIとして位置づける。
+P-06～P-08では、上記方針に従ってGitHub Actions用GCP認証、ワークフロー、正常系・意図的失敗の確認を実装する。
 
-## 14. P-03完了条件
+## 15. P-03完了条件
 
 - raw、staging、martsの現在構成が実装と一致している
 - 5モデルの依存関係と3つの結合を説明できる

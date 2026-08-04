@@ -30,7 +30,7 @@
 - 注文単位で12種類の異常を判定する
 - 異常件数と総合照合結果を出力する
 - dbtの汎用テストと独自SQLテストで品質を検証する
-- `dbt build --full-refresh`で一連処理を再現する
+- `dbt seed --full-refresh`、`dbt run --full-refresh`、`dbt test`の順で一連処理を再現する
 
 ### 3.2 対象外
 
@@ -109,7 +109,7 @@
 | AC-06 | 総合状態 | `error_count = 0`なら`MATCHED`、1以上なら`ERROR`となる | 独自SQLテスト |
 | AC-07 | 固定ケース | O001～O008の`error_count`と`reconciliation_status`が定義済み期待値と一致する | 独自SQLテスト |
 | AC-08 | 品質テスト | 汎用34件、独自SQL 3件の計37件がすべて合格する | `dbt test`結果 |
-| AC-09 | 一連実行 | `dbt build --full-refresh`でseed、model、testの46件がすべて成功する | dbt実行結果 |
+| AC-09 | 一連実行 | seed 4件、model 5件、test 37件を順に実行し、合計46件がすべて成功する | dbt実行結果 |
 | AC-10 | 再実行 | 同じ固定CSVで全件再構築しても、行数、`error_count`、`reconciliation_status`が変化しない | 再実行前後の比較 |
 | AC-11 | 公開安全性 | 実在データ、認証情報、秘密鍵、個人情報が公開リポジトリに含まれない | 公開前レビュー |
 

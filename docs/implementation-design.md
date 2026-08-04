@@ -100,7 +100,7 @@ flowchart TD
     SS --> FCT
 ```
 
-依存関係はdbtの`source()`と`ref()`で管理する。手作業でモデル実行順を固定しない。
+staging以降のモデル依存関係はdbtの`ref()`で管理する。rawはseedと同名のsourceとして参照しているため、dbt上でseedからstagingへの依存関係は作られない。初回構築ではseedを先に明示実行する。
 
 ## 6. 照合モデルの内部設計
 
@@ -154,7 +154,7 @@ flowchart TD
 | mart汎用テスト | `models/marts/schema.yml` | 注文IDの一意性・NULL、状態値、12フラグと件数のNULL | 汎用テストに含む |
 | 独自SQLテスト | `tests/` | フラグ合計、固定8注文の期待結果、状態整合性 | 3件 |
 
-汎用34件と独自SQL 3件の合計37件を`dbt test`で検証する。`dbt build --full-refresh`では、4 seeds、5 models、37 testsの合計46ノードを一連実行する。
+汎用34件と独自SQL 3件の合計37件を`dbt test`で検証する。全件再構築では4 seeds、5 models、37 testsの合計46件を`seed → run → test`の順で実行する。
 
 ## 10. 実行と再実行
 
@@ -165,11 +165,7 @@ dbt run --full-refresh
 dbt test
 ```
 
-一連確認では次を実行する。
-
-```powershell
-dbt build --full-refresh
-```
+`dbt build --full-refresh`単独では、既存のrawテーブルを参照してstagingがseedより先に実行される場合がある。このため、初回構築と再実行では上記3コマンドの順序を明示する。
 
 現行の再実行は、同じ固定CSVからraw、staging、martを全件再構築する方式である。増分更新、遅延到着、継続取込に対する冪等性を示すものではない。
 
@@ -223,7 +219,7 @@ payment-reconciliation-data-mart/
 - intermediate層
 - 本番規模の性能・可用性設計
 
-次期開発では、GitHub Actionsから固定テストデータによる`dbt build --full-refresh`を実行し、SQL変更時の回帰を自動検知する。これは本番バッチ運用ではなくCIとして位置づける。
+次期開発では、GitHub Actionsから固定テストデータによる`dbt seed --full-refresh`、`dbt run --full-refresh`、`dbt test`を順に実行し、SQL変更時の回帰を自動検知する。これは本番バッチ運用ではなくCIとして位置づける。
 
 ## 14. P-03完了条件
 

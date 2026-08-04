@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DBT_PROFILES_DIR: ${{ runner.temp }}/dbt
+      DBT_PROFILES_DIR: /tmp/dbt
 
     defaults:
       run:

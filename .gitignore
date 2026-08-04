@@ -228,3 +228,6 @@ dbt_packages/
 profiles.yml
 service-account*.json
 gcp-key*.json
+
+# GitHub Actions temporary Google credentials
+gha-creds-*.json

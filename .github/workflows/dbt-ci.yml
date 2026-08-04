@@ -1,0 +1,89 @@
+name: dbt CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "payment_reconciliation/**"
+      - "requirements.txt"
+      - ".github/workflows/dbt-ci.yml"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "payment_reconciliation/**"
+      - "requirements.txt"
+      - ".github/workflows/dbt-ci.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: dbt-ci-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  dbt-regression-test:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+
+    env:
+      DBT_PROFILES_DIR: ${{ runner.temp }}/dbt
+
+    defaults:
+      run:
+        working-directory: payment_reconciliation
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dbt
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install dbt-bigquery==1.12.0
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Create dbt profile
+        run: |
+          mkdir -p "${DBT_PROFILES_DIR}"
+          cat > "${DBT_PROFILES_DIR}/profiles.yml" <<EOF
+          payment_reconciliation:
+            target: ci
+            outputs:
+              ci:
+                type: bigquery
+                method: oauth
+                project: ${{ vars.GCP_PROJECT_ID }}
+                dataset: raw
+                location: asia-northeast1
+                threads: 4
+          EOF
+
+      - name: Check dbt connection
+        run: dbt debug
+
+      - name: Load seed data
+        run: dbt seed --full-refresh
+
+      - name: Build models
+        run: dbt run --full-refresh
+
+      - name: Run 37 tests
+        run: dbt test

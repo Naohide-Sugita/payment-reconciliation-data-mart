@@ -129,3 +129,103 @@ models:
                 values:
                   - MATCHED
                   - ERROR
+
+
+  - name: fct_reconciliation_errors
+    description: >-
+      照合で検出された異常を、注文IDとエラー要因の組み合わせごとに1行で出力する。
+      fct_payment_reconciliationの12種類の異常フラグを行へ変換し、
+      エラー種別別の集計およびエラー対象データの確認に使用する。
+    columns:
+      - name: order_id
+        data_type: string
+        description: "異常が検出された注文ID。"
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_payment_reconciliation')
+                field: order_id
+
+      - name: merchant_id
+        data_type: string
+        description: "注文に記録された加盟店ID。"
+
+      - name: merchant_name
+        data_type: string
+        description: "加盟店マスタから取得した加盟店名。"
+
+      - name: payment_id
+        data_type: string
+        description: "注文に紐づく成功決済のID。決済データ欠損の場合はNULL。"
+
+      - name: settlement_id
+        data_type: string
+        description: "成功決済に紐づく精算ID。精算データ欠損の場合はNULL。"
+
+      - name: error_code
+        data_type: string
+        description: "異常フラグの列名を使用した機械判読用のエラーコード。"
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - is_payment_missing
+                  - is_merchant_missing
+                  - is_fee_rate_missing
+                  - is_order_payment_amount_mismatch
+                  - is_settlement_missing
+                  - is_settlement_not_completed
+                  - is_merchant_mismatch
+                  - is_gross_amount_mismatch
+                  - is_fee_amount_mismatch
+                  - is_net_amount_mismatch
+                  - is_payment_datetime_invalid
+                  - is_settlement_datetime_invalid
+
+      - name: error_reason
+        data_type: string
+        description: "業務担当者向けの日本語によるエラー要因。"
+        data_tests:
+          - not_null
+
+      - name: order_amount
+        data_type: int64
+        description: "注文金額。"
+
+      - name: payment_amount
+        data_type: int64
+        description: "成功決済の金額。決済データ欠損の場合はNULL。"
+
+      - name: gross_amount
+        data_type: int64
+        description: "精算に記録された手数料控除前の総額。"
+
+      - name: actual_fee_amount
+        data_type: int64
+        description: "精算に記録された実手数料額。"
+
+      - name: expected_fee_amount
+        data_type: int64
+        description: "決済金額と契約手数料率から算出した期待手数料額。"
+
+      - name: actual_net_amount
+        data_type: int64
+        description: "精算に記録された実入金額。"
+
+      - name: expected_net_amount
+        data_type: int64
+        description: "決済金額から期待手数料額を差し引いた期待入金額。"
+
+      - name: ordered_at
+        data_type: timestamp
+        description: "注文が行われた日時。"
+
+      - name: paid_at
+        data_type: timestamp
+        description: "成功決済が処理された日時。"
+
+      - name: settled_at
+        data_type: timestamp
+        description: "精算が処理された日時。"

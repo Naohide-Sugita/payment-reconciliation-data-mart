@@ -80,20 +80,21 @@
 
 ## 6. 照合・異常判定要件
 
-| 分類 | ID | 出力フラグ／エラーコード | 異常条件 |
-|---|---|---|---|
-| データ欠損 | REC-01 | `is_payment_missing` | 成功した決済が存在しない |
-| データ欠損 | REC-02 | `is_merchant_missing` | 注文の`merchant_id`に対応する加盟店マスタが存在しない |
-| データ欠損 | REC-03 | `is_fee_rate_missing` | 加盟店マスタは存在するが`fee_rate`が設定されていない |
-| データ欠損 | REC-04 | `is_settlement_missing` | 決済は存在するが、対応する精算が存在しない |
-| 処理状態異常 | REC-05 | `is_settlement_not_completed` | 精算は存在するが、`settlement_status`が`COMPLETED`ではない |
-| データ不一致 | REC-06 | `is_order_payment_amount_mismatch` | 決済は存在するが、注文金額と決済金額が一致しない |
-| データ不一致 | REC-07 | `is_merchant_mismatch` | 注文の加盟店と精算の加盟店が一致しない |
-| データ不一致 | REC-08 | `is_gross_amount_mismatch` | 決済金額と精算総額が一致しない |
-| データ不一致 | REC-09 | `is_fee_amount_mismatch` | 実際の手数料と`round(payment_amount * fee_rate)`が一致しない |
-| データ不一致 | REC-10 | `is_net_amount_mismatch` | 実際の入金額と`payment_amount - expected_fee_amount`が一致しない |
-| 日時不正 | REC-11 | `is_payment_datetime_invalid` | 注文日時または決済日時がない、または決済日時が注文日時より前 |
-| 日時不正 | REC-12 | `is_settlement_datetime_invalid` | 決済日時または精算日時がない、または精算日時が決済日時より前 |
+| 分類     | ID     | エラーコード                             | エラー理由      | 異常条件                   |
+| ------ | ------ | ---------------------------------- | ---------- | ---------------------- |
+| データ欠損  | REC-01 | `is_payment_missing`               | 決済データ欠損    | 成功した決済が存在しない           |
+| データ欠損  | REC-02 | `is_merchant_missing`              | 加盟店マスタ欠損   | 注文の加盟店IDに対応するマスタが存在しない |
+| データ欠損  | REC-03 | `is_fee_rate_missing`              | 手数料率欠損     | 加盟店マスタは存在するが手数料率がない    |
+| データ欠損  | REC-04 | `is_settlement_missing`            | 精算データ欠損    | 決済は存在するが対応する精算がない      |
+| 処理状態異常 | REC-05 | `is_settlement_not_completed`      | 精算未完了      | 精算状態が`COMPLETED`ではない   |
+| データ不一致 | REC-06 | `is_order_payment_amount_mismatch` | 注文・決済金額不一致 | 注文金額と決済金額が一致しない        |
+| データ不一致 | REC-07 | `is_merchant_mismatch`             | 加盟店不一致     | 注文側と精算側の加盟店が一致しない      |
+| データ不一致 | REC-08 | `is_gross_amount_mismatch`         | 決済・精算総額不一致 | 決済金額と精算総額が一致しない        |
+| データ不一致 | REC-09 | `is_fee_amount_mismatch`           | 手数料額不一致    | 実際の手数料と期待手数料が一致しない     |
+| データ不一致 | REC-10 | `is_net_amount_mismatch`           | 入金額不一致     | 実際の入金額と期待入金額が一致しない     |
+| 日時不正   | REC-11 | `is_payment_datetime_invalid`      | 決済日時不正     | 注文・決済日時がない、または時系列が逆    |
+| 日時不正   | REC-12 | `is_settlement_datetime_invalid`   | 精算日時不正     | 決済・精算日時がない、または時系列が逆    |
+
 
 分類、表示名、表示順は[Looker Studio用エラー種別サマリクエリ](../payment_reconciliation/analyses/looker_studio_error_type_summary.sql)と一致させる。
 
@@ -111,11 +112,14 @@
 
 出力カラムの完全な定義は[dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/)を参照する。
 
+
 ### 7.3 可視化
 
-Looker Studioでは、照合サマリとエラー明細を確認できることとする。照合サマリでは4分類・12種類のエラー種別ごとの件数を0件も含めて表示する。
+Looker Studioでは、照合サマリとエラー明細を確認できることとする。
 
-集計には[`looker_studio_error_type_summary.sql`](../payment_reconciliation/analyses/looker_studio_error_type_summary.sql)を使用する。
+照合サマリでは、4分類・12種類のエラー種別ごとの件数を0件も含めて表示する。集計には[`looker_studio_error_type_summary.sql`](../payment_reconciliation/analyses/looker_studio_error_type_summary.sql)を使用する。
+
+エラー明細では、異常が検出された注文について、注文・決済・精算の識別情報、エラー内容、照合対象の金額、精算状態、注文・決済・精算日時を表示する。明細の生成には[`looker_studio_reconciliation_error_details.sql`](../payment_reconciliation/analyses/looker_studio_reconciliation_error_details.sql)を使用し、`fct_reconciliation_errors`と`fct_payment_reconciliation`を結合して原因調査に必要な17項目を出力する。
 
 ## 8. 品質要件
 
@@ -134,7 +138,7 @@ Looker Studioでは、照合サマリとエラー明細を確認できること�
 
 ## 9. 受入基準
 
-| ID | 確認内容 | 合格条件 | 証跡 |
+| ID | 確認内容 | 合格条件 | 確認方法・確認先 |
 |---|---|---|---|
 | AC-01 | raw取込 | 4種類の動作確認用サンプルCSVがBigQueryへ作成される | dbt実行結果 |
 | AC-02 | staging生成 | 4つのstagingビューが作成され、各seedを参照できる | dbt実行結果、BigQuery |

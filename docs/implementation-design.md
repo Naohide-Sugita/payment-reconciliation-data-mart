@@ -4,44 +4,61 @@
 
 ## 1. 目的
 
-動作確認用のサンプルCSVから照合結果とエラー明細を作成し、品質を検証して可視化・ドキュメント公開するまでの実装方式を示す。
+本書は、以下の実装方式を示すことを目的とする。
 
-業務要件、12種類のエラー定義、受入基準は[要件・受入基準](requirements-and-acceptance.md)を正本とし、本書では重複して定義しない。
+- サンプルCSVから照合結果とエラー明細を作成し、Looker Studioで可視化する方式
+- GitHubへの変更反映時に、SQL・データ構造・異常判定を自動検証するCIの方式
+- データモデルの依存関係、テーブル・カラム仕様、テスト定義をdbt Docsで生成・公開する方式
+
+業務要件、12種類のエラー判定条件、受入基準の詳細は
+[要件・受入基準](requirements-and-acceptance.md)を正本とする。
+本書では、それらを実現するためのデータ処理・テスト・可視化の実装方式を示す。
 
 ## 2. システム構成
 
 ```mermaid
 flowchart TD
-    subgraph EXEC["実行"]
-        GHA["GitHub Actions<br/>認証・dbt実行"]
+    subgraph EXEC["CI（変更時の自動検証）"]
+        GHA["GitHub Actions<br/>サンプルデータでdbtを自動実行"]
     end
 
     subgraph DATA["データ処理（BigQuery）"]
-        CSV["D1 サンプルCSV"] --> RAW["raw<br/>4種類を格納"]
+        CSV["サンプルCSV<br/>注文・決済・加盟店・精算"] --> RAW["D1 raw<br/>dbt seedで4種類を格納"]
         RAW --> STG["D2 staging<br/>型・項目名を統一"]
-        STG --> RECON["D3・D4 照合結果<br/>結合・金額計算・12種類の異常判定"]
+        STG --> JOIN["D3 結合<br/>注文を基準にLEFT JOIN"]
+        JOIN --> RECON["D4 照合結果<br/>金額計算・12種類の異常判定"]
         RECON --> ERRORS["D5 エラー明細<br/>異常ごとに1行"]
     end
 
-    subgraph USE["可視化"]
+    subgraph USE["利用"]
         BI["D6 Looker Studio<br/>照合結果を表示"]
     end
 
-    subgraph QA["品質検証・仕様公開"]
-        TEST["dbt test<br/>構造・期待結果を検証"]
-        DOCS["dbt Docs<br/>依存関係・仕様・テスト情報"]
-        PAGES["GitHub Pages"]
-        TEST -->|"成功"| DOCS --> PAGES
+    subgraph QA["CIでの品質検証"]
+        TEST["dbt test<br/>SQL・データ構造・異常判定を確認"]
     end
 
-    GHA --> CSV
+    subgraph DOC["ドキュメント公開"]
+        DOCS["dbt Docs<br/>依存関係・仕様・テスト情報"]
+        PAGES["GitHub Pages"]
+        DOCS --> PAGES
+    end
+
+    GHA -.->|"dbt seed・run"| RAW
+    GHA -.->|"dbt test"| TEST
     RECON --> BI
     ERRORS --> BI
-    RECON -.-> TEST
-    ERRORS -.-> TEST
+    RECON -.->|"検証対象"| TEST
+    ERRORS -.->|"検証対象"| TEST
+    TEST -.->|"成功後に生成"| DOCS
 ```
 
-実線はデータの流れ、点線はデータに対する品質検証を表す。異常が0件の注文は`MATCHED`、1件以上の注文は`ERROR`とし、検出した異常ごとにエラー明細を出力する。業務上の異常は照合結果であり、ワークフローの失敗とは扱わない。dbt testが不合格の場合のみGitHub Actionsを失敗とし、dbt Docsを公開しない。
+実線はデータの流れ、点線はGitHub Actionsによる実行・検証・公開の制御を表す。異常が0件の注文は`MATCHED`、1件以上の注文は`ERROR`とし、検出した異常ごとにエラー明細を出力する。業務上の異常は照合結果であり、ワークフローの失敗とは扱わない。dbt testが不合格の場合のみGitHub Actionsを失敗とし、dbt Docsを生成・公開しない。
+
+> [!NOTE]
+> 本図の品質検証は、本番データを継続的に監視する機能ではない。GitHubへ変更を反映した際に、サンプルデータを使ってSQLや異常判定が意図どおり動作するかを確認するCIである。Looker StudioはBigQueryの処理結果を直接参照するため、図では「利用」と「CIでの品質検証」を別の流れとして表現している。
+
+
 
 ## 3. データ処理
 

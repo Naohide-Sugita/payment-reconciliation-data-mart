@@ -41,9 +41,11 @@ flowchart TD
 
 ### エラー明細
 
-異常が検出された注文について、注文ID、エラーコード、エラー内容を一覧表示します。
+異常が検出された注文について、注文・決済・精算の識別情報、エラー内容、照合対象の金額、精算状態、注文・決済・精算日時を一覧表示します。
 
 ![Looker Studioのエラー明細](docs/images/looker-studio-dashboard_02.png)
+
+[Looker Studio用エラー明細クエリ](payment_reconciliation/analyses/looker_studio_reconciliation_error_details.sql)：エラー明細と注文単位の照合結果を結合し、原因調査に使用する17項目を出力
 
 ダッシュボードは照合結果を確認するための参照用であり、データの更新や業務処理を行う機能は持ちません。
 

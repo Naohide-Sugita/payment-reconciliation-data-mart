@@ -23,7 +23,7 @@ flowchart TD
         RECON --> ERRORS["D5 エラー明細<br/>異常ごとに1行"]
     end
 
-    subgraph USE["利用"]
+    subgraph USE["可視化"]
         BI["D6 Looker Studio<br/>照合結果を表示"]
     end
 

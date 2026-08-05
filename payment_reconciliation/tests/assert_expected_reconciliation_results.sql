@@ -39,22 +39,6 @@ with expected as (
         struct(
             'O003',
             true,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            1,
-            'ERROR'
-        ),
-        struct(
-            'O004',
             true,
             false,
             false,
@@ -66,8 +50,24 @@ with expected as (
             false,
             false,
             false,
+            2,
+            'ERROR'
+        ),
+        struct(
+            'O004',
+            true,
             false,
-            1,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            2,
             'ERROR'
         ),
         struct(

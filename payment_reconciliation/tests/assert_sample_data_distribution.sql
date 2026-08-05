@@ -5,18 +5,18 @@ with expected as (
         struct('matched_orders', 173),
         struct('error_orders', 27),
         struct('is_payment_missing', 6),
-        struct('is_merchant_missing', 1),
-        struct('is_fee_rate_missing', 1),
+        struct('is_merchant_missing', 2),
+        struct('is_fee_rate_missing', 2),
         struct('is_order_payment_amount_mismatch', 4),
         struct('is_settlement_missing', 5),
         struct('is_settlement_not_completed', 3),
-        struct('is_merchant_mismatch', 1),
-        struct('is_gross_amount_mismatch', 1),
+        struct('is_merchant_mismatch', 2),
+        struct('is_gross_amount_mismatch', 2),
         struct('is_fee_amount_mismatch', 2),
-        struct('is_net_amount_mismatch', 1),
-        struct('is_payment_datetime_invalid', 1),
-        struct('is_settlement_datetime_invalid', 1),
-        struct('error_detail_rows', 27)
+        struct('is_net_amount_mismatch', 2),
+        struct('is_payment_datetime_invalid', 2),
+        struct('is_settlement_datetime_invalid', 2),
+        struct('error_detail_rows', 34)
     ])
 
 ),

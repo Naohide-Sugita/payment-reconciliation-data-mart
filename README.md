@@ -10,7 +10,7 @@ BigQueryとdbtを使って、サンプルデータを投入・整形・照合し
 flowchart TD
     CSV["サンプルCSV<br/>注文・決済・加盟店・精算"]
     RAW["raw<br/>入力データを格納"]
-    STG["staging<br/>型・項目名を統一"]
+    STG["staging<br/>表記・データ型・NULLを標準化"]
     MARTS["marts<br/>結合・金額計算・異常判定"]
     BI["Looker Studio<br/>照合サマリ・エラー明細"]
 
@@ -27,7 +27,7 @@ flowchart TD
 - GitHub Actions上でdbt testを実行し、期待結果とデータ品質を自動検証
 - Looker Studioで照合サマリとエラー明細を可視化
 
-12種類の正式な定義と判定条件は[照合・異常判定要件](docs/requirements-and-acceptance.md#6-照合異常判定要件)に集約しています。
+12種類の正式な定義と判定条件は[照合・異常判定要件](docs/requirements-and-acceptance.md#7-照合異常判定要件)に集約しています。
 
 ## 可視化
 
@@ -41,7 +41,7 @@ flowchart TD
 
 ### エラー明細
 
-異常が検出された注文について、注文・決済・精算の識別情報、エラー内容、照合対象の金額、精算状態、注文・決済・精算日時を一覧表示します。
+異常が検出された注文について、注文・決済・精算の識別情報、エラー理由、照合対象の金額、精算状態、注文・決済・精算日時を一覧表示します。
 
 ![Looker Studioのエラー明細](docs/images/looker-studio-dashboard_02.png)
 
@@ -63,10 +63,10 @@ flowchart TD
 | raw | `orders` | 注文のサンプルデータ | [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/#!/source/source.payment_reconciliation.raw.orders) |
 | raw | `payments` | 決済のサンプルデータ | [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/#!/source/source.payment_reconciliation.raw.payments) |
 | raw | `settlements` | 精算のサンプルデータ | [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/#!/source/source.payment_reconciliation.raw.settlements) |
-| staging | `stg_merchants` | 加盟店データの型・名称を統一 | [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/#!/model/model.payment_reconciliation.stg_merchants) |
-| staging | `stg_orders` | 注文データの型・名称を統一 | [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/#!/model/model.payment_reconciliation.stg_orders) |
-| staging | `stg_payments` | 決済データの型・名称を統一 | [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/#!/model/model.payment_reconciliation.stg_payments) |
-| staging | `stg_settlements` | 精算データの型・名称を統一 | [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/#!/model/model.payment_reconciliation.stg_settlements) |
+| staging | `stg_merchants` | 加盟店データの文字列と手数料率を標準化 | [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/#!/model/model.payment_reconciliation.stg_merchants) |
+| staging | `stg_orders` | 注文データの文字列、金額、日時を標準化 | [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/#!/model/model.payment_reconciliation.stg_orders) |
+| staging | `stg_payments` | 決済データの文字列、状態、金額、日時、空文字を標準化 | [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/#!/model/model.payment_reconciliation.stg_payments) |
+| staging | `stg_settlements` | 精算データの文字列、状態、金額、日時を標準化 | [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/#!/model/model.payment_reconciliation.stg_settlements) |
 | marts | `fct_payment_reconciliation` | 1注文1行の照合結果 | [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/#!/model/model.payment_reconciliation.fct_payment_reconciliation) |
 | marts | `fct_reconciliation_errors` | 1注文・1エラー種別につき1行の明細 | [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/#!/model/model.payment_reconciliation.fct_reconciliation_errors) |
 

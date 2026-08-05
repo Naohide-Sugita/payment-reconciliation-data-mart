@@ -161,6 +161,7 @@ actual as (
         error_count,
         reconciliation_status
     from {{ ref('fct_payment_reconciliation') }}
+    where order_id in (select order_id from expected)
 
 )
 

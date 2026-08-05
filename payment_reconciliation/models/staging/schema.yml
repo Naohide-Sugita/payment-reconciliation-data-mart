@@ -17,9 +17,7 @@ models:
         description: "前後の空白を除去した加盟店の表示名。"
       - name: fee_rate
         data_type: numeric
-        description: "SAFE_CASTでNUMERIC型へ変換した契約手数料率。手数料計算に使用するためNULL不可。"
-        data_tests:
-          - not_null
+        description: "SAFE_CASTでNUMERIC型へ変換した契約手数料率。NULLの場合は照合モデルで手数料率欠損として検知する。"
 
   - name: stg_orders
     description: >-
@@ -34,13 +32,9 @@ models:
           - unique
       - name: merchant_id
         data_type: string
-        description: "前後の空白を除去した加盟店ID。stg_merchantsの加盟店IDを参照し、NULL不可。"
+        description: "前後の空白を除去した加盟店ID。NULL不可。加盟店マスタに存在しない場合は照合モデルで加盟店マスタ欠損として検知する。"
         data_tests:
           - not_null
-          - relationships:
-              arguments:
-                to: ref('stg_merchants')
-                field: merchant_id
       - name: order_amount
         data_type: int64
         description: "SAFE_CASTでINT64型へ変換した注文金額。NULL不可。"

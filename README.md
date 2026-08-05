@@ -2,16 +2,19 @@
 
 注文・決済・加盟店・精算データを注文単位で照合し、不一致の有無と理由を確認するデータマートです。
 
-BigQueryとdbtを使って、動作確認用のサンプルデータを投入・整形・照合し、品質テストを行った結果をLooker Studioで可視化します。
+BigQueryとdbtを使って、サンプルデータを投入・整形・照合し、照合結果とエラー明細をLooker Studioで可視化します。変更時には、GitHub Actions上でdbt testを実行し、データ構造と期待結果を自動検証します。
 
 ## 概要データフロー
 
 ```mermaid
 flowchart TD
-    CSV["サンプルCSV"] --> RAW["BigQuery raw"]
-    RAW --> STG["staging"]
-    STG --> MARTS["marts<br/>照合結果・エラー明細"]
-    MARTS --> BI["Looker Studio"]
+    CSV["サンプルCSV<br/>注文・決済・加盟店・精算"]
+    RAW["raw<br/>入力データを格納"]
+    STG["staging<br/>型・項目名を統一"]
+    MARTS["marts<br/>結合・金額計算・異常判定"]
+    BI["Looker Studio<br/>照合サマリ・エラー明細"]
+
+    CSV --> RAW --> STG --> MARTS --> BI
 ```
 
 この図はデータの流れだけを示しています。GitHub Actions、dbt test、dbt Docsを含む詳細構成は[実装設計](docs/implementation-design.md#2-システム構成)を参照してください。
@@ -21,13 +24,12 @@ flowchart TD
 - 注文を母集団として、決済・加盟店・精算データを照合
 - 「データ欠損」「処理状態異常」「データ不一致」「日時不正」の4分類、計12種類の異常を判定
 - 1注文1行の照合結果と、1注文・1エラー種別につき1行のエラー明細を作成
-- dbt testとGitHub Actionsで期待結果およびデータ品質を検証
+- GitHub Actions上でdbt testを実行し、期待結果とデータ品質を自動検証
 - Looker Studioで照合サマリとエラー明細を可視化
 
 12種類の正式な定義と判定条件は[照合・異常判定要件](docs/requirements-and-acceptance.md#6-照合異常判定要件)に集約しています。
 
 ## 可視化
-
 
 ### 照合サマリ
 
@@ -35,9 +37,7 @@ flowchart TD
 
 ![Looker Studioの照合サマリ](docs/images/looker-studio-dashboard_01.png)
 
-※エーラ内訳件数（[クエリ](payment_reconciliation/analyses/looker_studio_error_type_summary.sql)）：4分類、表示順、0件を含む集計ロジック
-
-
+[Looker Studio用エラー種別サマリクエリ](payment_reconciliation/analyses/looker_studio_error_type_summary.sql)：4分類・12種類の表示順と、0件を含む集計ロジックを定義
 
 ### エラー明細
 
@@ -45,15 +45,13 @@ flowchart TD
 
 ![Looker Studioのエラー明細](docs/images/looker-studio-dashboard_02.png)
 
-> [!NOTE]
-> ダッシュボードは照合結果を確認するための参照用であり、データの更新や業務処理を行う機能は持ちません。
-
+ダッシュボードは照合結果を確認するための参照用であり、データの更新や業務処理を行う機能は持ちません。
 
 ## ドキュメント
 
 - [要件・受入基準](docs/requirements-and-acceptance.md)：対象範囲、業務要件、エラー定義、受入基準
 - [実装設計](docs/implementation-design.md)：システム構成、データ処理、結合方式、テスト、CI・ドキュメント公開方式
-- [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/)：モデル間の依存関係、テーブル・カラム仕様、テスト情報。※下記のテーブル一覧を参照
+- [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/)：モデル間の依存関係、テーブル・カラム仕様、テスト情報。テーブルごとの詳細は下記の[テーブル一覧](#テーブル一覧)を参照
 
 ### テーブル一覧
 

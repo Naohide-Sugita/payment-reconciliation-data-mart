@@ -66,7 +66,7 @@ flowchart TD
 ## ドキュメント
 
 - [要件・受入基準](docs/requirements-and-acceptance.md)：対象範囲、業務要件、エラー定義、受入基準
-- [実装設計](docs/implementation-design.md)：システム構成、データ処理、結合方式、テスト、CI・ドキュメント公開方式
+- [実装設計](docs/implementation-design.md)：システム構成、入力データの論理ER図、データ処理、結合方式、テスト、CI・ドキュメント公開方式
 - [dbt Docs](https://naohide-sugita.github.io/payment-reconciliation-data-mart/)：モデル間の依存関係、テーブル・カラム仕様、テスト情報。テーブルごとの詳細は下記の[テーブル一覧](#テーブル一覧)を参照
 
 ### テーブル一覧

@@ -71,6 +71,59 @@ flowchart TD
 
 ## 4. データ構成
 
+### 4.1 入力データの論理ER図
+
+照合処理で使用する4種類の入力データの論理的な関係を示す。
+
+```mermaid
+erDiagram
+    MERCHANTS o|--o{ ORDERS : "merchant_id"
+    ORDERS ||--o{ PAYMENTS : "order_id"
+    PAYMENTS o|--o| SETTLEMENTS : "settlement_batch_id"
+    MERCHANTS o|--o{ SETTLEMENTS : "merchant_id（照合項目）"
+
+    MERCHANTS {
+        string merchant_id PK
+        string merchant_name
+        numeric fee_rate
+    }
+
+    ORDERS {
+        string order_id PK
+        string merchant_id FK
+        int64 order_amount
+        timestamp ordered_at
+    }
+
+    PAYMENTS {
+        string payment_id PK
+        string order_id FK
+        int64 payment_amount
+        string payment_status
+        string settlement_batch_id FK
+        timestamp paid_at
+    }
+
+    SETTLEMENTS {
+        string settlement_id PK
+        string settlement_batch_id UK
+        string merchant_id FK
+        int64 gross_amount
+        int64 fee_amount
+        int64 net_amount
+        string settlement_status
+        timestamp settled_at
+    }
+```
+
+注文を照合の母集団とし、`order_id`で決済、`merchant_id`で加盟店マスタ、成功決済の`settlement_batch_id`で精算データを関連付ける。
+
+精算データの`merchant_id`は結合には使用せず、注文側の加盟店IDとの一致確認に使用する。BigQuery上では外部キー制約を設定せず、dbt testおよび照合処理によって関係性を検証する。
+
+また、マスタ欠損、精算欠損、加盟店不一致を異常パターンとして検証するため、サンプルデータでは一部の関連が成立しない場合がある。
+
+### 4.2 レイヤー構成
+
 テーブル・モデル名、役割、個別のdbt Docsへのリンクは、READMEの[テーブル一覧](../README.md#テーブル一覧)を参照する。本書では、各レイヤーの実装上の責務を示す。
 
 | レイヤー | 形式 | 実装上の責務 |

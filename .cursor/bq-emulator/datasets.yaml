@@ -1,0 +1,10 @@
+# Initial datasets for the local BigQuery emulator. The project id matches the
+# `database:` in models/staging/sources.yml; the datasets match the schemas dbt
+# writes to (raw = seeds/sources, staging + marts = views). Data itself is
+# loaded per run by `dbt seed`.
+projects:
+  - id: payment-recon-mart
+    datasets:
+      - id: raw
+      - id: staging
+      - id: marts

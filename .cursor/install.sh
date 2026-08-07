@@ -49,10 +49,30 @@ if ! "${EMULATOR_BIN}" --version 2>/dev/null | grep -q "${EMULATOR_VERSION}"; th
   rm -rf "${tmp}"
 fi
 
-# 3. Local dbt profile + emulator support files (copied to stable $HOME paths
-#    so the per-boot terminals do not depend on the working directory).
-cp "${REPO_ROOT}/.cursor/profiles.yml" "${HOME}/.dbt/profiles.yml"
+# 3. Emulator support files copied to stable $HOME paths so the per-boot
+#    terminals do not depend on the working directory.
 cp "${REPO_ROOT}/.cursor/bq-emulator/bq_proxy.py" "${SUPPORT_DIR}/bq_proxy.py"
 cp "${REPO_ROOT}/.cursor/bq-emulator/datasets.yaml" "${SUPPORT_DIR}/datasets.yaml"
+
+# 4. Local dbt profile. Generated here (not committed) because dbt's standard
+#    .gitignore excludes profiles.yml. The `dev` target runs the whole pipeline
+#    against the local emulator proxy, so no Google Cloud credentials are needed;
+#    CI writes its own profile that targets real BigQuery.
+cat > "${HOME}/.dbt/profiles.yml" <<'EOF'
+payment_reconciliation:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth-secrets
+      token: emulator-local-token
+      project: payment-recon-mart
+      dataset: raw
+      location: asia-northeast1
+      threads: 4
+      api_endpoint: http://localhost:9055
+      job_execution_timeout_seconds: 300
+      job_retries: 0
+EOF
 
 echo "install.sh: dbt $("${VENV_DIR}/bin/dbt" --version 2>/dev/null | head -1 || true) and emulator ${EMULATOR_VERSION} ready"

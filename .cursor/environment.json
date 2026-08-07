@@ -1,0 +1,14 @@
+{
+  "name": "payment-reconciliation-data-mart",
+  "install": "bash .cursor/install.sh",
+  "terminals": [
+    {
+      "name": "bigquery-emulator",
+      "command": "exec \"$HOME/.local/bin/bigquery-emulator\" --project=payment-recon-mart --data-from-yaml=\"$HOME/.cursor-bq/datasets.yaml\" --port=9050 --grpc-port=9060 --log-level=info"
+    },
+    {
+      "name": "bigquery-proxy",
+      "command": "until curl -sf -o /dev/null http://localhost:9050/bigquery/v2/projects/payment-recon-mart/datasets; do sleep 1; done; exec python3 \"$HOME/.cursor-bq/bq_proxy.py\""
+    }
+  ]
+}
